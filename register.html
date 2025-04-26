@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register - Kas Digital</title>
+
+  <!-- Bootstrap & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet" />
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
+  <style>
+    :root {
+      --primary-color: #0d6efd;
+      --secondary-color: #0b5ed7;
+      --dark-color: #1a1a2e;
+    }
+
+    body {
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Poppins', sans-serif;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .register-card {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      width: 100%;
+      max-width: 500px;
+      padding: 40px;
+      animation: slideUp 0.8s ease-in-out;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .register-icon {
+      font-size: 4rem;
+      color: var(--primary-color);
+      margin-bottom: 20px;
+      animation: bounce 2s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-20px); }
+      60% { transform: translateY(-10px); }
+    }
+
+    .form-label {
+      font-weight: 500;
+      color: var(--dark-color);
+    }
+
+    .btn-primary {
+      background: var(--primary-color);
+      border: none;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+      background: var(--secondary-color);
+      transform: scale(1.05);
+    }
+
+    .alert {
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 0.9rem;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    .password-container {
+      position: relative;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      color: #6c757d;
+      cursor: pointer;
+      z-index: 5;
+      padding: 0.375rem 0.75rem;
+    }
+
+    .password-toggle:hover {
+      color: var(--primary-color);
+    }
+
+    .login-link {
+      color: var(--primary-color);
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+
+    .login-link:hover {
+      color: var(--secondary-color);
+    }
+
+    .input-group-text {
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+
+    .form-control {
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="register-card">
+    <div class="text-center">
+      <i class="ri-user-add-line register-icon"></i>
+      <h2 class="mb-3">Daftar Akun Baru</h2>
+      <p class="text-muted mb-4">Buat akun Anda untuk mulai mengelola kas dengan mudah</p>
+    </div>
+
+    <div id="alertSection" class="mb-3"></div>
+
+    <form id="registerForm">
+      <div class="mb-3">
+        <label for="name" class="form-label">Nama Lengkap</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="ri-user-line"></i></span>
+          <input type="text" id="name" class="form-control" placeholder="Masukkan nama lengkap" required />
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="ri-mail-line"></i></span>
+          <input type="email" id="email" class="form-control" placeholder="Masukkan email" required />
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <div class="password-container">
+          <div class="input-group">
+            <span class="input-group-text"><i class="ri-lock-line"></i></span>
+            <input type="password" id="password" class="form-control" placeholder="Masukkan password" required />
+          </div>
+          <button type="button" class="password-toggle" id="togglePassword">
+            <i class="ri-eye-off-line" id="passwordIcon"></i>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100 mb-3">
+        <i class="ri-check-line"></i> Daftar
+      </button>
+
+      <div class="text-center">
+        <span class="text-muted">Sudah punya akun? </span>
+        <a href="login.html" class="login-link">Login di sini</a>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBVx4NW3gyoajsGljvHN1s3R35N6446D_0",
+      authDomain: "uang-kas-4e27b.firebaseapp.com",
+      databaseURL: "https://uang-kas-4e27b-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "uang-kas-4e27b",
+      storageBucket: "uang-kas-4e27b.appspot.com",
+      messagingSenderId: "885843797013",
+      appId: "1:885843797013:web:2d8b60f8d00fa152275a1c"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+    const secretKey = "U4ngK4sSup3rRah4s1aK5&13L";
+
+    document.getElementById('togglePassword').addEventListener('click', function () {
+      const passwordField = document.getElementById('password');
+      const icon = document.getElementById('passwordIcon');
+      
+      if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        icon.classList.remove('ri-eye-off-line');
+        icon.classList.add('ri-eye-line');
+      } else {
+        passwordField.type = 'password';
+        icon.classList.remove('ri-eye-line');
+        icon.classList.add('ri-eye-off-line');
+      }
+    });
+
+    document.getElementById('registerForm').addEventListener('submit', async function (event) {
+      event.preventDefault();
+
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!validateInputs(name, email, password)) return;
+
+      try {
+        setLoadingState(true);
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        const user = userCredential.user;
+
+        const userData = {
+          uid: user.uid,
+          nama: name,
+          email: email,
+          role: "user",
+          createdAt: new Date().toISOString()
+        };
+
+        await db.ref('users/' + user.uid).set(userData);
+        const encrypted = CryptoJS.AES.encrypt(JSON.stringify(userData), secretKey).toString();
+        localStorage.setItem("userData", encrypted);
+
+        showAlert('success', 'Pendaftaran berhasil! Mengarahkan ke dashboard...');
+        setTimeout(() => window.location.href = "dashboard.html", 2000);
+      } catch (error) {
+        handleRegistrationError(error);
+      } finally {
+        setLoadingState(false);
+      }
+    });
+
+    function validateInputs(name, email, password) {
+      if (name.length < 3) {
+        showAlert('danger', 'Nama harus lebih dari 2 karakter.');
+        return false;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showAlert('danger', 'Format email tidak valid.');
+        return false;
+      }
+      if (password.length < 6) {
+        showAlert('danger', 'Password minimal 6 karakter.');
+        return false;
+      }
+      return true;
+    }
+
+    function showAlert(type, message) {
+      const alertSection = document.getElementById('alertSection');
+      alertSection.innerHTML = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+          ${message}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>`;
+    }
+
+    function handleRegistrationError(error) {
+      console.error("Registration error:", error);
+
+      let msg = "Terjadi kesalahan. Silakan coba lagi.";
+      const errorCode = error?.code || "";
+      const errorMessage = error?.message || error?.toString();
+
+      switch (errorCode) {
+        case 'auth/email-already-in-use':
+          msg = "Email sudah digunakan. Silakan login atau gunakan email lain.";
+          break;
+        case 'auth/invalid-email':
+          msg = "Format email tidak valid.";
+          break;
+        case 'auth/weak-password':
+          msg = "Password terlalu lemah. Gunakan minimal 6 karakter.";
+          break;
+        default:
+          console.warn("Unhandled error:", errorMessage);
+          break;
+      }
+
+      showAlert('danger', msg);
+    }
+
+    function setLoadingState(isLoading) {
+      const submitButton = document.querySelector('#registerForm button[type="submit"]');
+      submitButton.disabled = isLoading;
+      submitButton.innerHTML = isLoading
+        ? '<span class="spinner-border spinner-border-sm"></span> Memproses...'
+        : '<i class="ri-check-line"></i> Daftar';
+    }
+  </script>
+</body>
+</html>
